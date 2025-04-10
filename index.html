@@ -167,6 +167,34 @@
       seatContainer.appendChild(row);
     }
 
+    function fetchBookedSeats() {
+      const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZ_B8RzPEBn6Vhh_jhdmWPIvfMS1iAoSGS2k4jFGzIAmxozZ0ai5pnGlP6-NqKgkvGAweB1CCEj4vH/pub?gid=0&single=true&output=csv";
+
+      fetch(csvUrl)
+        .then((response) => response.text())
+        .then((data) => {
+          const rows = data.split("\n").slice(1); // ตัดหัวตารางออก
+          rows.forEach((row) => {
+            const [seatNumber, name, phone, date] = row.split(",");
+            if (seatNumber && name && phone && date) {
+              bookedSeats.set(parseInt(seatNumber), { name, phone, date });
+
+              const seat = document.querySelector(`.seat[data-seat-number="${seatNumber}"]`);
+              if (seat) {
+                seat.classList.add("booked");
+              }
+            }
+          });
+
+          updateBookedList();
+          updateStats();
+        })
+        .catch((error) => {
+          console.error("Error fetching CSV data:", error);
+          alert("ไม่สามารถดึงข้อมูลการจองได้");
+        });
+    }
+
     function confirmBooking() {
       const selectedSeats = document.querySelectorAll(".seat.selected");
 
@@ -192,7 +220,6 @@
 
         const date = selectedDate.date.toLocaleDateString("th-TH");
 
-        // ส่งข้อมูลไปยัง Google Apps Script
         fetch("https://script.google.com/macros/s/AKfycbwlpeRuIZceAQxL7To54yBevfk3W1H8c-C0nBneDnIXl34McYZ7iP_jvFdJepL7spuO3A/exec", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -237,6 +264,11 @@
         <p>ที่นั่งที่เหลืออยู่: ${remainingCount}</p>
       `;
     }
+
+    // ดึงข้อมูลการจองเมื่อโหลดหน้าเว็บ
+    window.onload = () => {
+      fetchBookedSeats();
+    };
   </script>
 </body>
 </html>
